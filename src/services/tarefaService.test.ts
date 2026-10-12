@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import axios from 'axios';
-import { ConfiguracaoApiError, criarTarefa, excluirTarefa, listarTarefas } from './tarefaService';
+import { alterarTarefa, ConfiguracaoApiError, criarTarefa, excluirTarefa, listarTarefas } from './tarefaService';
 import type { NovaTarefa } from '../types/Tarefa';
 
-const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), delete: vi.fn() }));
+const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() }));
 vi.mock('axios', () => ({ default: { create: vi.fn(() => api) } }));
 
 const nova: NovaTarefa = {
@@ -16,6 +16,7 @@ beforeEach(() => {
   vi.stubEnv('VITE_API_URL', 'https://crudcrud.com/api/endpoint-de-teste/');
   api.get.mockReset();
   api.post.mockReset();
+  api.put.mockReset();
   api.delete.mockReset();
 });
 afterEach(() => vi.unstubAllEnvs());
@@ -35,6 +36,18 @@ describe('tarefaService', () => {
     api.post.mockResolvedValue({ data: salva });
     await expect(criarTarefa({ ...nova, ...{ _id: 'nao-enviar' } })).resolves.toEqual(salva);
     expect(api.post).toHaveBeenCalledWith('/tarefas', nova);
+  });
+
+  it('atualiza pelo identificador existente e devolve a tarefa com o mesmo _id', async () => {
+    api.put.mockResolvedValue({ status: 200 });
+    const alterada = { ...nova, titulo: 'Revisar requisitos' };
+    await expect(alterarTarefa('id/seguro', alterada)).resolves.toEqual({ ...alterada, _id: 'id/seguro' });
+    expect(api.put).toHaveBeenCalledWith('/tarefas/id%2Fseguro', alterada);
+  });
+
+  it('impede atualização sem identificador', async () => {
+    await expect(alterarTarefa(' ', nova)).rejects.toThrow('identificador');
+    expect(api.put).not.toHaveBeenCalled();
   });
 
   it('exclui pelo identificador sem exigir corpo na resposta DELETE', async () => {

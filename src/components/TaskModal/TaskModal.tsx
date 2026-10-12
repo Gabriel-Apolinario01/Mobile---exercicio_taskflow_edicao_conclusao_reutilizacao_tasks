@@ -3,11 +3,11 @@ import type { KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useTarefas } from '../../contexts/TarefasContext';
-import type { NovaTarefa } from '../../types/Tarefa';
+import type { NovaTarefa, Tarefa } from '../../types/Tarefa';
 import { TaskForm } from '../TaskForm/TaskForm';
 import './TaskModal.css';
 
-type TaskModalProps = { aberto: boolean; aoFechar: () => void };
+type TaskModalProps = { aberto: boolean; tarefa?: Tarefa | null; aoFechar: () => void };
 
 function elementosFocaveis(painel: HTMLElement): HTMLElement[] {
   return Array.from(painel.querySelectorAll<HTMLElement>(
@@ -15,8 +15,8 @@ function elementosFocaveis(painel: HTMLElement): HTMLElement[] {
   )).filter((elemento) => elemento.tabIndex >= 0 && !elemento.matches(':disabled, [hidden], [inert]'));
 }
 
-export function TaskModal({ aberto, aoFechar }: Readonly<TaskModalProps>) {
-  const { adicionarTarefa } = useTarefas();
+export function TaskModal({ aberto, tarefa = null, aoFechar }: Readonly<TaskModalProps>) {
+  const { adicionarTarefa, editarTarefa } = useTarefas();
   const overlayRef = useRef<HTMLDivElement>(null);
   const painelRef = useRef<HTMLDivElement>(null);
   const envioEmAndamento = useRef(false);
@@ -71,7 +71,8 @@ export function TaskModal({ aberto, aoFechar }: Readonly<TaskModalProps>) {
     envioEmAndamento.current = true;
     setSalvando(true);
     try {
-      await adicionarTarefa(novaTarefa);
+      if (tarefa) await editarTarefa({ ...novaTarefa, _id: tarefa._id });
+      else await adicionarTarefa(novaTarefa);
       aoFechar();
     } finally {
       envioEmAndamento.current = false;
@@ -108,14 +109,14 @@ export function TaskModal({ aberto, aoFechar }: Readonly<TaskModalProps>) {
     <div className="task-modal" ref={overlayRef}>
       <div
         className="task-modal__content" ref={painelRef} role="dialog"
-        aria-modal="true" aria-label="Nova tarefa" tabIndex={-1}
+        aria-modal="true" aria-label={tarefa ? `Editar tarefa: ${tarefa.titulo}` : 'Nova tarefa'} tabIndex={-1}
         onKeyDown={controlarTeclado}
       >
         <button
           className="task-modal__close" type="button" aria-label="Fechar"
           onClick={solicitarFechamento} disabled={salvando}
         ><X size={20} aria-hidden="true" /></button>
-        <TaskForm aoSalvar={salvarTarefa} aoCancelar={solicitarFechamento} />
+        <TaskForm tarefaInicial={tarefa} aoSalvar={salvarTarefa} aoCancelar={solicitarFechamento} />
       </div>
     </div>,
     document.body,

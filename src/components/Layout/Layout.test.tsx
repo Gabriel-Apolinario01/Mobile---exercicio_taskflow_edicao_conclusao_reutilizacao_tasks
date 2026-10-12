@@ -2,17 +2,18 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../App';
-import { criarTarefa, excluirTarefa, listarTarefas } from '../../services/tarefaService';
+import { alterarTarefa, criarTarefa, excluirTarefa, listarTarefas } from '../../services/tarefaService';
 
 vi.mock('../../services/tarefaService', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../services/tarefaService')>();
-  return { ...original, listarTarefas: vi.fn(), criarTarefa: vi.fn(), excluirTarefa: vi.fn() };
+  return { ...original, listarTarefas: vi.fn(), criarTarefa: vi.fn(), alterarTarefa: vi.fn(), excluirTarefa: vi.fn() };
 });
 
 beforeEach(() => {
   window.history.replaceState(null, '', '/tarefas');
   vi.mocked(listarTarefas).mockReset().mockResolvedValue([]);
   vi.mocked(criarTarefa).mockReset().mockImplementation(async (tarefa) => ({ ...tarefa, _id: 'nova' }));
+  vi.mocked(alterarTarefa).mockReset().mockImplementation(async (id, tarefa) => ({ ...tarefa, _id: id }));
   vi.mocked(excluirTarefa).mockReset().mockResolvedValue(undefined);
 });
 
@@ -89,6 +90,34 @@ describe('Layout integrado', () => {
     expect(await screen.findByRole('heading', { name: 'Entregar interface' })).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(criarTarefa).toHaveBeenCalledExactlyOnceWith({ titulo: 'Entregar interface', descricao: '', data: '', prioridade: 'medium', projeto: '', concluida: false });
+    expect(listarTarefas).toHaveBeenCalledTimes(1);
+  });
+
+  it('edita uma tarefa no mesmo modal, preserva o identificador e atualiza o card', async () => {
+    const tarefa = {
+      _id: 'existente', titulo: 'Estudar React', descricao: 'Revisar hooks', data: '2026-10-13',
+      prioridade: 'high' as const, projeto: 'TaskFlow', concluida: false,
+    };
+    vi.mocked(listarTarefas).mockResolvedValue([tarefa]);
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByRole('heading', { name: 'Estudar React' });
+    await user.click(screen.getByRole('button', { name: 'Editar tarefa: Estudar React' }));
+
+    const dialogo = screen.getByRole('dialog', { name: 'Editar tarefa: Estudar React' });
+    expect(within(dialogo).getByLabelText(/Título/)).toHaveValue('Estudar React');
+    expect(within(dialogo).getByLabelText(/Descrição/)).toHaveValue('Revisar hooks');
+    expect(within(dialogo).getByLabelText('Prazo Opcional')).toHaveValue('2026-10-13');
+    await user.clear(within(dialogo).getByLabelText(/Título/));
+    await user.type(within(dialogo).getByLabelText(/Título/), 'Estudar React e TypeScript');
+    await user.click(within(dialogo).getByRole('button', { name: 'Salvar alterações' }));
+
+    expect(await screen.findByRole('heading', { name: 'Estudar React e TypeScript' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(alterarTarefa).toHaveBeenCalledExactlyOnceWith('existente', {
+      titulo: 'Estudar React e TypeScript', descricao: 'Revisar hooks', data: '2026-10-13',
+      prioridade: 'high', projeto: 'TaskFlow', concluida: false,
+    });
     expect(listarTarefas).toHaveBeenCalledTimes(1);
   });
 

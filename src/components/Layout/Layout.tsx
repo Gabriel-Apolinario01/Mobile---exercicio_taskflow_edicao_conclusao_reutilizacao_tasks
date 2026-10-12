@@ -3,14 +3,17 @@ import { Outlet } from 'react-router-dom';
 import { Header } from '../Header/Header';
 import { Sidebar } from '../Sidebar/Sidebar';
 import { TaskModal } from '../TaskModal/TaskModal';
+import type { Tarefa } from '../../types/Tarefa';
 import './Layout.css';
 
-export type LayoutContext = { abrirTaskModal: () => void };
+export type LayoutContext = { abrirTaskModal: () => void; editarTaskModal: (tarefa: Tarefa) => void };
 
 export function Layout() {
   const [taskModalAberto, setTaskModalAberto] = useState(false);
-  function abrirTaskModal() { setTaskModalAberto(true); }
-  function fecharTaskModal() { setTaskModalAberto(false); }
+  const [tarefaEmEdicao, setTarefaEmEdicao] = useState<Tarefa | null>(null);
+  function abrirTaskModal() { setTarefaEmEdicao(null); setTaskModalAberto(true); }
+  function editarTaskModal(tarefa: Tarefa) { setTarefaEmEdicao(tarefa); setTaskModalAberto(true); }
+  function fecharTaskModal() { setTaskModalAberto(false); setTarefaEmEdicao(null); }
 
   return (
     <>
@@ -20,11 +23,11 @@ export function Layout() {
         <div className="app-layout__content">
           <Header aoNovaTarefa={abrirTaskModal} />
           <main className="app-layout__main" id="conteudo" tabIndex={-1}>
-            <Outlet context={{ abrirTaskModal } satisfies LayoutContext} />
+            <Outlet context={{ abrirTaskModal, editarTaskModal } satisfies LayoutContext} />
           </main>
         </div>
       </div>
-      <TaskModal aberto={taskModalAberto} aoFechar={fecharTaskModal} />
+      <TaskModal aberto={taskModalAberto} tarefa={tarefaEmEdicao} aoFechar={fecharTaskModal} />
     </>
   );
 }

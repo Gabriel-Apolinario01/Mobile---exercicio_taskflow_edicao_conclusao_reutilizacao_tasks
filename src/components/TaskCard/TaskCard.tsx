@@ -1,13 +1,13 @@
 import { useRef, useState } from 'react';
-import { CalendarDays, Circle, CircleCheckBig, LoaderCircle, Trash2 } from 'lucide-react';
+import { CalendarDays, Circle, CircleCheckBig, LoaderCircle, Pencil, Trash2 } from 'lucide-react';
 import type { Prioridade, Tarefa } from '../../types/Tarefa';
 import './TaskCard.css';
 
-type TaskCardProps = { tarefa: Tarefa; aoExcluir: (id: string) => Promise<void> };
+type TaskCardProps = { tarefa: Tarefa; aoExcluir: (id: string) => Promise<void>; aoEditar: (tarefa: Tarefa) => void };
 
 const prioridades: Record<Prioridade, string> = { high: 'Alta', medium: 'Média', low: 'Baixa' };
 
-export function TaskCard({ tarefa, aoExcluir }: Readonly<TaskCardProps>) {
+export function TaskCard({ tarefa, aoExcluir, aoEditar }: Readonly<TaskCardProps>) {
   const [excluindo, setExcluindo] = useState(false);
   const exclusaoEmAndamento = useRef(false);
   const Status = tarefa.concluida ? CircleCheckBig : Circle;
@@ -35,6 +35,11 @@ export function TaskCard({ tarefa, aoExcluir }: Readonly<TaskCardProps>) {
         <div className="task-card__header">
           <h2>{tarefa.titulo}</h2>
           <div className="task-card__actions">
+            <button
+              type="button" onClick={() => aoEditar(tarefa)}
+              disabled={!tarefa._id || excluindo} aria-label={`Editar tarefa: ${tarefa.titulo}`}
+              title={!tarefa._id ? 'A tarefa ainda não tem um identificador para edição.' : 'Editar tarefa'}
+            ><Pencil size={17} aria-hidden="true" /><span className="sr-only">Editar</span></button>
             <button
               type="button" onClick={() => void excluir()}
               disabled={excluindo || !tarefa._id} aria-label={`Excluir tarefa: ${tarefa.titulo}`}

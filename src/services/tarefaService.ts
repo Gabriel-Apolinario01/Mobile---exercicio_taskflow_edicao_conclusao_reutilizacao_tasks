@@ -58,6 +58,12 @@ export async function criarTarefa(tarefa: NovaTarefa): Promise<Tarefa> {
   return resposta.data;
 }
 
+export async function alterarTarefa(id: string, tarefa: NovaTarefa): Promise<Tarefa> {
+  if (!id.trim()) throw new Error('Informe o identificador da tarefa para atualizar.');
+  await obterApi().put(`${RECURSO}/${encodeURIComponent(id)}`, tarefa);
+  return { ...tarefa, _id: id };
+}
+
 export async function excluirTarefa(id: string): Promise<void> {
   if (!id.trim()) throw new Error('Informe o identificador da tarefa para excluir.');
   await obterApi().delete(`${RECURSO}/${encodeURIComponent(id)}`);

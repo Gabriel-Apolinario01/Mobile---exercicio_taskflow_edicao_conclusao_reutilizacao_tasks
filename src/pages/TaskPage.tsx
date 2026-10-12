@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { AlertCircle, LoaderCircle } from 'lucide-react';
+import type { LayoutContext } from '../components/Layout/Layout';
 import { TaskList } from '../components/TaskList/TaskList';
 import type { Tarefa } from '../types/Tarefa';
 import './Tasks/Tasks.css';
@@ -17,6 +18,7 @@ type TaskPageProps = {
 };
 
 export function TaskPage({ titulo, chamada, descricao, tarefas, carregando, erro, aoExcluir, acao }: Readonly<TaskPageProps>) {
+  const { editarTaskModal } = useOutletContext<LayoutContext>();
   const [parametros] = useSearchParams();
   const normalizar = (texto: string) => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
   const busca = normalizar(parametros.get('q')?.trim() ?? '');
@@ -35,10 +37,10 @@ export function TaskPage({ titulo, chamada, descricao, tarefas, carregando, erro
       {erro && <p className="tasks-page__error" role="alert"><AlertCircle size={20} aria-hidden="true" />{erro}</p>}
       {carregando && <p className="tasks-page__loading" role="status"><LoaderCircle size={20} aria-hidden="true" />Carregando tarefas...</p>}
       {visiveis.length > 0 ? (
-        <TaskList tarefas={visiveis} aoExcluir={aoExcluir} />
+        <TaskList tarefas={visiveis} aoExcluir={aoExcluir} aoEditar={editarTaskModal} />
       ) : !carregando && !erro && (busca ? (
         <div className="task-list__empty" role="status"><h2>Nenhuma tarefa encontrada</h2><p>Altere a busca para ver as tarefas desta página.</p></div>
-      ) : <TaskList tarefas={visiveis} aoExcluir={aoExcluir} />)}
+      ) : <TaskList tarefas={visiveis} aoExcluir={aoExcluir} aoEditar={editarTaskModal} />)}
     </section>
   );
 }

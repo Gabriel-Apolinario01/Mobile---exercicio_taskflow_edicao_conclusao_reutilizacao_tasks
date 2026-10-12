@@ -1,10 +1,11 @@
 import { useId, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { AlertCircle, LoaderCircle } from 'lucide-react';
-import type { NovaTarefa, Prioridade } from '../../types/Tarefa';
+import type { NovaTarefa, Prioridade, Tarefa } from '../../types/Tarefa';
 import './TaskForm.css';
 
 type TaskFormProps = {
+  tarefaInicial?: Tarefa | null;
   aoSalvar: (tarefa: NovaTarefa) => Promise<void>;
   aoCancelar: () => void;
 };
@@ -13,8 +14,15 @@ const estadoInicial: NovaTarefa = {
   titulo: '', descricao: '', data: '', prioridade: 'medium', projeto: '', concluida: false,
 };
 
-export function TaskForm({ aoSalvar, aoCancelar }: Readonly<TaskFormProps>) {
-  const [formulario, setFormulario] = useState<NovaTarefa>(estadoInicial);
+function obterEstadoInicial(tarefa?: Tarefa | null): NovaTarefa {
+  if (!tarefa) return estadoInicial;
+  const { titulo, descricao, data, prioridade, projeto, concluida } = tarefa;
+  return { titulo, descricao, data, prioridade, projeto, concluida };
+}
+
+export function TaskForm({ tarefaInicial, aoSalvar, aoCancelar }: Readonly<TaskFormProps>) {
+  const editando = Boolean(tarefaInicial);
+  const [formulario, setFormulario] = useState<NovaTarefa>(() => obterEstadoInicial(tarefaInicial));
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
   const [tituloInvalido, setTituloInvalido] = useState(false);
@@ -57,10 +65,10 @@ export function TaskForm({ aoSalvar, aoCancelar }: Readonly<TaskFormProps>) {
 
   return (
     <form className="task-form" onSubmit={enviarFormulario} aria-busy={salvando}>
-      <h2>Nova tarefa</h2>
+      <h2>{editando ? 'Editar tarefa' : 'Nova tarefa'}</h2>
 
       <fieldset className="task-form__fields" disabled={salvando}>
-        <legend className="task-form__sr-only">Dados da nova tarefa</legend>
+        <legend className="task-form__sr-only">{editando ? 'Dados da tarefa' : 'Dados da nova tarefa'}</legend>
         <label htmlFor={`${id}-titulo`}>Título <span aria-hidden="true">*</span></label>
         <input
           ref={tituloRef} id={`${id}-titulo`} name="titulo" required maxLength={100}
@@ -113,7 +121,7 @@ export function TaskForm({ aoSalvar, aoCancelar }: Readonly<TaskFormProps>) {
         <button className="task-form__cancel" type="button" onClick={aoCancelar} disabled={salvando}>Cancelar</button>
         <button className="task-form__submit" type="submit" disabled={salvando}>
           {salvando && <LoaderCircle className="task-form__spinner" size={17} aria-hidden="true" />}
-          {salvando ? 'Salvando...' : 'Criar tarefa'}
+          {salvando ? 'Salvando...' : editando ? 'Salvar alterações' : 'Criar tarefa'}
         </button>
       </div>
       <span className="task-form__sr-only" role="status">{salvando ? 'Salvando tarefa. Aguarde a conclusão.' : ''}</span>

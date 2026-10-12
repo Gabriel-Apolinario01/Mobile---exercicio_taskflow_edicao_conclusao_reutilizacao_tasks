@@ -2,12 +2,12 @@ import type { ReactNode } from 'react';
 import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TarefasProvider, useTarefas } from './TarefasContext';
-import { ConfiguracaoApiError, criarTarefa, excluirTarefa, listarTarefas } from '../services/tarefaService';
+import { alterarTarefa, ConfiguracaoApiError, criarTarefa, excluirTarefa, listarTarefas } from '../services/tarefaService';
 import type { NovaTarefa, Tarefa } from '../types/Tarefa';
 
 vi.mock('../services/tarefaService', async (importOriginal) => {
   const original = await importOriginal<typeof import('../services/tarefaService')>();
-  return { ...original, listarTarefas: vi.fn(), criarTarefa: vi.fn(), excluirTarefa: vi.fn() };
+  return { ...original, listarTarefas: vi.fn(), criarTarefa: vi.fn(), alterarTarefa: vi.fn(), excluirTarefa: vi.fn() };
 });
 
 const nova: NovaTarefa = {
@@ -27,6 +27,7 @@ function pendente<T>() {
 beforeEach(() => {
   vi.mocked(listarTarefas).mockReset().mockResolvedValue([antiga]);
   vi.mocked(criarTarefa).mockReset().mockResolvedValue(criada);
+  vi.mocked(alterarTarefa).mockReset().mockImplementation(async (id, tarefa) => ({ ...tarefa, _id: id }));
   vi.mocked(excluirTarefa).mockReset().mockResolvedValue(undefined);
 });
 
@@ -78,6 +79,36 @@ describe('TarefasProvider', () => {
     await act(async () => { await result.current.adicionarTarefa(nova); });
     expect(result.current.erro).toBe('');
     expect(result.current.tarefas).toEqual([criada, antiga]);
+  });
+
+  it('persiste a edição e substitui somente a tarefa correspondente sem mutar a coleção', async () => {
+    const outra: Tarefa = { ...nova, _id: 'outra', titulo: 'Outra tarefa' };
+    vi.mocked(listarTarefas).mockResolvedValue([antiga, outra]);
+    const { result } = renderHook(useTarefas, { wrapper });
+    await waitFor(() => expect(result.current.tarefas).toEqual([antiga, outra]));
+    const colecaoAnterior = result.current.tarefas;
+    const tarefaEditada = { ...antiga, titulo: 'Título atualizado' };
+
+    await act(async () => { await result.current.editarTarefa(tarefaEditada); });
+
+    expect(alterarTarefa).toHaveBeenCalledWith('antiga', { ...nova, titulo: 'Título atualizado' });
+    expect(result.current.tarefas).not.toBe(colecaoAnterior);
+    expect(result.current.tarefas).toEqual([tarefaEditada, outra]);
+    expect(result.current.tarefas[1]).toBe(outra);
+  });
+
+  it('mantém os dados anteriores quando a persistência da edição falha', async () => {
+    vi.mocked(alterarTarefa).mockRejectedValue(new Error('HTTP 500'));
+    const { result } = renderHook(useTarefas, { wrapper });
+    await waitFor(() => expect(result.current.carregando).toBe(false));
+
+    await act(async () => {
+      await expect(result.current.editarTarefa({ ...antiga, titulo: 'Não salvar' }))
+        .rejects.toThrow('Não foi possível confirmar a edição');
+    });
+
+    expect(result.current.tarefas).toEqual([antiga]);
+    expect(result.current.erro).toContain('Não foi possível confirmar a edição.');
   });
 
   it('só remove o registro depois da confirmação do DELETE', async () => {

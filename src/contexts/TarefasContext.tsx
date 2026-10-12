@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { ConfiguracaoApiError, criarTarefa, excluirTarefa, listarTarefas } from '../services/tarefaService';
+import { alterarTarefa as persistirAlteracao, ConfiguracaoApiError, criarTarefa, excluirTarefa, listarTarefas } from '../services/tarefaService';
 import type { NovaTarefa, Tarefa } from '../types/Tarefa';
 
 type TarefasContextType = {
@@ -8,6 +8,7 @@ type TarefasContextType = {
   carregando: boolean;
   erro: string;
   adicionarTarefa: (novaTarefa: NovaTarefa) => Promise<void>;
+  editarTarefa: (tarefa: Tarefa) => Promise<void>;
   removerTarefa: (id: string) => Promise<void>;
 };
 
@@ -64,6 +65,22 @@ export function TarefasProvider({ children }: Readonly<{ children: ReactNode }>)
     }
   }
 
+  async function editarTarefa(tarefa: Tarefa): Promise<void> {
+    const { _id, ...dadosTarefa } = tarefa;
+    if (!_id) throw new Error('A tarefa não possui identificador para atualização.');
+
+    try {
+      setErro('');
+      const tarefaAtualizada = await persistirAlteracao(_id, dadosTarefa);
+      setTarefas((atuais) => atuais.map((atual) => atual._id === _id ? tarefaAtualizada : atual));
+    } catch (causa) {
+      const mensagem = causa instanceof ConfiguracaoApiError
+        ? causa.message : 'Não foi possível confirmar a edição. Recarregue a página antes de tentar novamente: as alterações podem ter sido salvas. Se o erro continuar, confira a conexão e a disponibilidade ou validade do endpoint do CrudCrud.';
+      setErro(mensagem);
+      throw new Error(mensagem, { cause: causa });
+    }
+  }
+
   async function removerTarefa(id: string): Promise<void> {
     try {
       setErro('');
@@ -77,7 +94,7 @@ export function TarefasProvider({ children }: Readonly<{ children: ReactNode }>)
   }
 
   return (
-    <TarefasContext.Provider value={{ tarefas, carregando, erro, adicionarTarefa, removerTarefa }}>
+    <TarefasContext.Provider value={{ tarefas, carregando, erro, adicionarTarefa, editarTarefa, removerTarefa }}>
       {children}
     </TarefasContext.Provider>
   );
