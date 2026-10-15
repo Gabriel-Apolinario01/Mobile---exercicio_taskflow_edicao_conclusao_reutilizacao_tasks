@@ -118,3 +118,11 @@ Depois publique também os commits do modal e dos testes. Não agrupe etapas inv
 Envie ao Gabriel o nome `codex/felipe` e o que testou. Gabriel fará o merge antes de Leonardo concluir a ligação visual.
 
 Base do professor: aula 06, seção 7.1 (formulário); continuação, seções 5 e 6 (TaskModal e overlay); slides de CSS e formulários acessíveis.
+
+TaskForm passou a aceitar `tarefaInicial?: Tarefa | null`, alternando
+os textos e o botão entre criação e edição. TaskModal passou a aceitar
+`tarefa?: Tarefa | null` e delega para `editarTarefa` do contexto
+quando existe registro selecionado, preservando o mesmo `_id` no PUT.
+Testes de edição foram acrescentados em `TaskForm.test.tsx` (5 novos)
+e `TaskModal.test.tsx` (7 novos), elevando o total da suíte para 82.
+Lint, testes e build permanecem aprovados via `npm run check`.
