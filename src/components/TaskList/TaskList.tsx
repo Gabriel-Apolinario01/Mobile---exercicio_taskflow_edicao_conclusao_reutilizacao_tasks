@@ -2,9 +2,9 @@ import type { Tarefa } from '../../types/Tarefa';
 import { TaskCard } from '../TaskCard/TaskCard';
 import './TaskList.css';
 
-type TaskListProps = { tarefas: Tarefa[]; aoExcluir: (id: string) => Promise<void>; aoEditar: (tarefa: Tarefa) => void };
+type TaskListProps = { tarefas: Tarefa[]; aoExcluir: (id: string) => Promise<void>; aoEditar: (tarefa: Tarefa) => void; aoAlternarConclusao: (tarefa: Tarefa) => Promise<void> };
 
-export function TaskList({ tarefas, aoExcluir, aoEditar }: Readonly<TaskListProps>) {
+export function TaskList({ tarefas, aoExcluir, aoEditar, aoAlternarConclusao }: Readonly<TaskListProps>) {
   if (tarefas.length === 0) {
     return (
       <div className="task-list__empty" role="status">
@@ -16,7 +16,7 @@ export function TaskList({ tarefas, aoExcluir, aoEditar }: Readonly<TaskListProp
 
   return (
     <ul className="task-list" aria-label="Lista de tarefas">
-      {tarefas.map((tarefa) => <li key={tarefa._id}><TaskCard tarefa={tarefa} aoExcluir={aoExcluir} aoEditar={aoEditar} /></li>)}
+      {tarefas.map((tarefa) => <li key={tarefa._id}><TaskCard tarefa={tarefa} aoExcluir={aoExcluir} aoEditar={aoEditar} aoAlternarConclusao={aoAlternarConclusao} /></li>)}
     </ul>
   );
 }

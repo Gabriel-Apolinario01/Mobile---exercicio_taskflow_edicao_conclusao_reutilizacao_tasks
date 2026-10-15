@@ -131,3 +131,6 @@
 .task-card__spinner { animation: task-card-spin 1s linear infinite; }
 @keyframes task-card-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .task-card__spinner { animation: none; } }
+
+.task-card__check:not(:disabled):hover { color: var(--color-primary); }
+.task-card__check:disabled { cursor: not-allowed; opacity: 0.6; }

@@ -14,10 +14,11 @@ type TaskPageProps = {
   carregando: boolean;
   erro: string;
   aoExcluir: (id: string) => Promise<void>;
+  aoAlternarConclusao: (tarefa: Tarefa) => Promise<void>;
   acao?: ReactNode;
 };
 
-export function TaskPage({ titulo, chamada, descricao, tarefas, carregando, erro, aoExcluir, acao }: Readonly<TaskPageProps>) {
+export function TaskPage({ titulo, chamada, descricao, tarefas, carregando, erro, aoExcluir, aoAlternarConclusao, acao }: Readonly<TaskPageProps>) {
   const { editarTaskModal } = useOutletContext<LayoutContext>();
   const [parametros] = useSearchParams();
   const normalizar = (texto: string) => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
@@ -37,10 +38,10 @@ export function TaskPage({ titulo, chamada, descricao, tarefas, carregando, erro
       {erro && <p className="tasks-page__error" role="alert"><AlertCircle size={20} aria-hidden="true" />{erro}</p>}
       {carregando && <p className="tasks-page__loading" role="status"><LoaderCircle size={20} aria-hidden="true" />Carregando tarefas...</p>}
       {visiveis.length > 0 ? (
-        <TaskList tarefas={visiveis} aoExcluir={aoExcluir} aoEditar={editarTaskModal} />
+        <TaskList tarefas={visiveis} aoExcluir={aoExcluir} aoEditar={editarTaskModal} aoAlternarConclusao={aoAlternarConclusao} />
       ) : !carregando && !erro && (busca ? (
         <div className="task-list__empty" role="status"><h2>Nenhuma tarefa encontrada</h2><p>Altere a busca para ver as tarefas desta página.</p></div>
-      ) : <TaskList tarefas={visiveis} aoExcluir={aoExcluir} aoEditar={editarTaskModal} />)}
+      ) : <TaskList tarefas={visiveis} aoExcluir={aoExcluir} aoEditar={editarTaskModal} aoAlternarConclusao={aoAlternarConclusao} />)}
     </section>
   );
 }
