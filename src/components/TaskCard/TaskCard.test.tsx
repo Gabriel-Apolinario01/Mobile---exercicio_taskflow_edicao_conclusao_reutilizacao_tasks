@@ -7,7 +7,7 @@ const tarefa: Tarefa = { _id: '123', titulo: 'Revisar interface', descricao: 'Co
 
 describe('TaskCard', () => {
   it('apresenta todos os dados e mantém o dia do prazo sem conversão de fuso', () => {
-    render(<TaskCard tarefa={tarefa} aoExcluir={vi.fn()} aoEditar={vi.fn()} />);
+    render(<TaskCard tarefa={tarefa} aoExcluir={vi.fn()} aoEditar={vi.fn()} aoAlternarConclusao={vi.fn()} />);
     expect(screen.getByRole('heading', { name: tarefa.titulo })).toBeInTheDocument();
     expect(screen.getByText(tarefa.descricao)).toBeInTheDocument();
     expect(screen.getByText('09/11/2026')).toHaveAttribute('datetime', '2026-11-09');
@@ -16,19 +16,19 @@ describe('TaskCard', () => {
     expect(screen.getByText('Pendente')).toBeInTheDocument();
   });
 
-  it('representa conclusão e campos opcionais vazios sem oferecer alteração de conclusão', () => {
-    render(<TaskCard tarefa={{ ...tarefa, data: '', descricao: '', projeto: '', concluida: true }} aoExcluir={vi.fn()} aoEditar={vi.fn()} />);
+  it('representa conclusão e campos opcionais vazios e oferece reabertura', () => {
+    render(<TaskCard tarefa={{ ...tarefa, data: '', descricao: '', projeto: '', concluida: true }} aoExcluir={vi.fn()} aoEditar={vi.fn()} aoAlternarConclusao={vi.fn()} />);
     expect(screen.getByText('Sem prazo')).toBeInTheDocument();
     expect(screen.getByText('Sem projeto')).toBeInTheDocument();
     expect(screen.getByText('Sem descrição.')).toBeInTheDocument();
     expect(screen.getByText('Concluída')).toBeInTheDocument();
-    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: `Reabrir tarefa: ${tarefa.titulo}` })).toBeEnabled();
   });
 
   it('aguarda a exclusão, bloqueia cliques repetidos e depende da coleção para remover o card', async () => {
     let concluir!: () => void;
     const aoExcluir = vi.fn(() => new Promise<void>((resolve) => { concluir = resolve; }));
-    render(<TaskCard tarefa={tarefa} aoExcluir={aoExcluir} aoEditar={vi.fn()} />);
+    render(<TaskCard tarefa={tarefa} aoExcluir={aoExcluir} aoEditar={vi.fn()} aoAlternarConclusao={vi.fn()} />);
     const botao = screen.getByRole('button', { name: `Excluir tarefa: ${tarefa.titulo}` });
     fireEvent.click(botao);
     fireEvent.click(botao);
@@ -42,7 +42,7 @@ describe('TaskCard', () => {
 
   it('não solicita exclusão quando a tarefa não tem identificador', () => {
     const aoExcluir = vi.fn();
-    render(<TaskCard tarefa={{ ...tarefa, _id: undefined }} aoExcluir={aoExcluir} aoEditar={vi.fn()} />);
+    render(<TaskCard tarefa={{ ...tarefa, _id: undefined }} aoExcluir={aoExcluir} aoEditar={vi.fn()} aoAlternarConclusao={vi.fn()} />);
     const botao = screen.getByRole('button', { name: `Excluir tarefa: ${tarefa.titulo}` });
     expect(botao).toBeDisabled();
     fireEvent.click(botao);

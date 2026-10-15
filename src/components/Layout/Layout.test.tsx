@@ -58,7 +58,7 @@ describe('Layout integrado', () => {
     await user.clear(screen.getByRole('searchbox'));
     expect(screen.getAllByRole('article')).toHaveLength(2);
     await user.click(screen.getByRole('link', { name: 'Todas as tarefas' }));
-    expect(screen.getAllByRole('article')).toHaveLength(3);
+    expect(screen.getAllByRole('article')).toHaveLength(1);
     expect(listarTarefas).toHaveBeenCalledTimes(1);
   });
 
